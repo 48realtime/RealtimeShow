@@ -3,437 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RealtimeTube - Stream Center</title>
+    <title>Panduan RealLive</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --yt-red: #ff0000;
-            --fb-blue: #1877f2;
-            --bg-dark: #0f0f0f;
-            --surface: #1e1e1e;
-            --accent: #3b82f6;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: white;
-            font-family: 'Inter', 'Roboto', sans-serif;
-            margin: 0;
-            overflow-x: hidden;
-        }
-
-        /* Sidebar Glassmorphism */
-        .sidebar {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1001;
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(10px);
-            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
         
-        .sidebar.closed {
-            transform: translateX(-110%);
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(30, 58, 138, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            color: #f1f5f9;
+            min-height: 100vh;
         }
 
-        /* Nav Item Hover Effects */
-        .nav-link {
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            padding-left: 1.5rem;
-            color: white;
-        }
-        .nav-link::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 4px;
-            background: var(--yt-red);
-            transform: scaleY(0);
-            transition: transform 0.2s ease;
-        }
-        .nav-link:hover::before {
-            transform: scaleY(1);
+        .step-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Player Styling */
-        .video-container {
-            position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
-            overflow: hidden;
-            background: #000;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        .step-card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+            background: rgba(30, 41, 59, 0.6);
+            transform: translateY(-2px);
         }
 
-        .video-container iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
+        .icon-box {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
         }
 
-        /* YouTube Anti-Touch Layer */
-        .yt-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 10;
-            background: transparent;
-            cursor: default;
-            pointer-events: auto;
+        .custom-checkbox {
+            width: 22px;
+            height: 22px;
+            accent-color: #3b82f6;
+            cursor: pointer;
         }
 
-        /* Loading Animation */
-        .loader {
-            border: 3px solid rgba(255,255,255,0.1);
-            border-top: 3px solid var(--yt-red);
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        .btn-primary {
+            background: linear-gradient(to right, #2563eb, #3b82f6);
+            transition: all 0.4s ease;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .btn-primary:not(.disabled):hover {
+            box-shadow: 0 0 25px rgba(37, 99, 235, 0.5);
+            transform: scale(1.02);
         }
 
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            transition: opacity 0.6s ease;
-        }
-
-        /* Chat Styling */
-        .chat-container {
-            height: 650px;
-            background: var(--surface);
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        /* Responsive Landscape */
-        @media (orientation: landscape) and (max-height: 500px) {
-            .header { display: none; }
-            main { padding: 0; margin: 0; max-width: 100%; }
-            .video-container { border-radius: 0; }
-        }
-
-        .tab-btn {
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        .tab-btn.active {
-            color: white;
-            background: rgba(255,255,255,0.05);
-        }
-        .tab-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -8px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 3px;
-            background: var(--yt-red);
-            border-radius: 2px;
+        .disabled {
+            opacity: 0.3;
+            filter: grayscale(1);
+            cursor: not-allowed;
+            pointer-events: none;
         }
     </style>
 </head>
-<body>
+<body class="flex items-center justify-center p-6">
 
-    <!-- Header -->
-    <header class="bg-[#0f0f0f]/80 backdrop-blur-md p-4 flex items-center justify-between sticky top-0 z-50 border-b border-white/5">
-        <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="text-2xl w-10 h-10 flex items-center justify-center hover:bg-white/10 rounded-full transition-colors">
-                <i class="fas fa-bars"></i>
-            </button>
-            <div class="flex items-center gap-2">
-                <div class="bg-red-600 p-1.5 rounded-lg">
-                    <i class="fab fa-youtube text-white text-xl"></i>
+    <div class="max-w-2xl w-full">
+        <!-- Header Ringkas -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
+                Siap <span class="text-blue-500">Menonton ?</span>
+            </h1>
+            <p class="text-slate-400 text-sm">Pahami langkah berikut untuk kenyamanan menonton Anda.</p>
+        </div>
+
+        <!-- Panduan List -->
+        <div class="space-y-3 mb-10">
+            <!-- Step 1 -->
+            <div class="step-card p-4 rounded-2xl flex items-center gap-4">
+                <div class="icon-box w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-volume-up text-white text-lg"></i>
                 </div>
-                <span class="text-xl font-bold tracking-tight">RealtimeTube</span>
-            </div>
-        </div>
-        <div class="flex items-center gap-2">
-            <button onclick="showGuide()" class="w-10 h-10 flex items-center justify-center hover:bg-yellow-500/10 rounded-full text-yellow-500 transition-all">
-                <i class="fas fa-lightbulb text-xl"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Sidebar Overlay -->
-    <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 opacity-0 hidden transition-opacity duration-300 z-[1000]"></div>
-
-    <!-- Sidebar Menu -->
-    <aside id="sidebar" class="sidebar fixed top-0 left-0 h-full w-80 closed px-0 overflow-hidden flex flex-col">
-        <!-- Sidebar Header -->
-        <div class="p-6 flex items-center justify-between border-b border-white/5">
-            <div class="flex items-center gap-3">
-                <i class="fas fa-stream text-red-500 text-xl"></i>
-                <span class="font-bold text-lg">Menu Utama</span>
-            </div>
-            <button onclick="toggleSidebar()" class="text-2xl w-10 h-10 flex items-center justify-center hover:bg-red-500/20 hover:text-red-500 rounded-full transition-all">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <!-- Sidebar Content -->
-        <div class="flex-1 overflow-y-auto py-4">
-            <div class="px-4 mb-2 text-[10px] uppercase tracking-widest text-gray-500 font-bold">Layanan Show</div>
-            <nav class="flex flex-col gap-1">
-                <a href="https://48realtime.github.io/Replay-Show/" target="_blank" class="nav-link flex items-center gap-4 py-3 px-6 text-gray-300">
-                    <i class="fas fa-history w-5 text-center"></i> Replay Show 1
-                </a>
-                <a href="https://replayshowstreaming.my.id/" target="_blank" class="nav-link flex items-center gap-4 py-3 px-6 text-gray-300">
-                    <i class="fas fa-play-circle w-5 text-center"></i> Replay Show 2
-                </a>
-                <a href="https://48realtime.github.io/Order-Show/" target="_blank" class="nav-link flex items-center gap-4 py-3 px-6 text-gray-300">
-                    <i class="fas fa-calendar-alt w-5 text-center"></i> Jadwal Show
-                </a>
-                
-                <div class="mx-6 h-[1px] bg-white/5 my-4"></div>
-                
-                <div class="px-4 mb-2 text-[10px] uppercase tracking-widest text-gray-500 font-bold">Komunitas</div>
-                <a href="https://whatsapp.com/channel/0029VazfNiwBVJl7qnrvdb0Z" target="_blank" class="nav-link flex items-center gap-4 py-3 px-6 text-gray-300">
-                    <i class="fab fa-whatsapp w-5 text-center text-green-500"></i> Saluran Whatsapp
-                </a>
-                <a href="https://wa.me/6288809048431" target="_blank" class="nav-link flex items-center gap-4 py-3 px-6 text-gray-300">
-                    <i class="fas fa-headset w-5 text-center text-blue-400"></i> Hubungi Admin
-                </a>
-            </nav>
-        </div>
-
-        <!-- Sidebar Footer -->
-        <div class="p-6 border-t border-white/5 bg-black/20">
-            <p class="text-xs text-gray-500 text-center">© 2024 RealtimeTube v2.0</p>
-        </div>
-    </aside>
-
-    <main class="max-w-7xl mx-auto p-4 lg:flex gap-6">
-        <!-- Player Section -->
-        <div class="lg:w-2/3">
-            <div class="mb-6 flex gap-2 bg-white/5 p-1.5 rounded-2xl w-fit">
-                <button onclick="switchPlayer('youtube')" id="btn-yt" class="tab-btn active px-6 py-2.5 rounded-xl flex items-center gap-2 font-semibold text-sm">
-                    <i class="fab fa-youtube text-lg"></i> YouTube
-                </button>
-                <button onclick="switchPlayer('facebook')" id="btn-fb" class="tab-btn px-6 py-2.5 rounded-xl flex items-center gap-2 font-semibold text-sm">
-                    <i class="fab fa-facebook text-lg"></i> Facebook
-                </button>
-            </div>
-
-            <!-- YouTube Player -->
-            <div id="player-yt" class="video-container relative group">
-                <div id="loader-yt" class="loading-overlay">
-                    <div class="loader"></div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-sm text-blue-100">Suara StreamBook</h3>
+                    <p class="text-slate-400 text-xs">Aktifkan manual suara pada layar pemutar StreamBook jika suara tidak muncul otomatis.</p>
                 </div>
-                <div class="yt-overlay"></div>
-                <div id="yt-iframe-container"></div>
             </div>
 
-            <!-- Facebook Player -->
-            <div id="player-fb" class="video-container hidden">
-                <div id="loader-fb" class="loading-overlay">
-                    <div class="loader" style="border-top-color: #1877f2;"></div>
-                </div>
-                <div id="fb-iframe-container" class="w-full h-full"></div>
-            </div>
-
-            <div class="mt-6 p-6 bg-white/5 rounded-2xl border border-white/5">
-                <h1 class="text-2xl font-bold tracking-tight" id="video-title">Menghubungkan ke siaran...</h1>
-                <div class="flex items-center gap-3 mt-3 text-gray-400">
-                    <div class="flex items-center gap-1.5 text-xs bg-red-500/10 text-red-500 px-2 py-1 rounded-md font-bold">
-                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span> LIVE
+            <!-- Step 2 & 3 Combined (Koneksi & Resolusi) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div class="step-card p-4 rounded-2xl flex items-center gap-4">
+                    <div class="icon-box w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-wifi text-white text-lg"></i>
                     </div>
-                    <span class="text-sm">RealtimeTube Streaming Platform</span>
+                    <div>
+                        <h3 class="font-bold text-sm text-blue-100">Koneksi</h3>
+                        <p class="text-slate-400 text-xs">Pastikan jaringan stabil.</p>
+                    </div>
+                </div>
+                <div class="step-card p-4 rounded-2xl flex items-center gap-4">
+                    <div class="icon-box w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-bolt text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-blue-100">Resolusi</h3>
+                        <p class="text-slate-400 text-xs">Resolusi otomatis di StreamTube.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="step-card p-4 rounded-2xl flex items-center gap-4">
+                <div class="icon-box w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-expand text-white text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-sm text-blue-100">Layar Landscape</h3>
+                    <p class="text-slate-400 text-xs">Klik fitur <span class="text-blue-400 font-semibold">Fill</span> untuk tampilan penuh.</p>
+                </div>
+            </div>
+
+            <!-- Step 5 -->
+            <div class="step-card p-4 rounded-2xl flex items-center gap-4 border-l-2 border-l-blue-500">
+                <div class="icon-box w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-pause text-white text-lg"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-sm text-blue-100">Pindah Player</h3>
+                    <p class="text-slate-400 text-xs">Pause video atau pemutar lama sebelum beralih agar suara tidak tumpang tindih.</p>
                 </div>
             </div>
         </div>
 
-        <!-- Chat Section -->
-        <div class="lg:w-1/3 mt-6 lg:mt-0">
-            <div class="chat-container relative">
-                <div class="p-4 bg-white/5 border-b border-white/5 flex items-center gap-3">
-                    <i class="fas fa-comments text-gray-400"></i>
-                    <span class="font-bold text-sm">Live Chat</span>
-                </div>
-                <div id="loader-chat" class="loading-overlay">
-                    <div class="loader" style="width: 30px; height: 30px;"></div>
-                </div>
-                <div id="chat-iframe-container" class="w-full h-[calc(100%-52px)]"></div>
-            </div>
-        </div>
-    </main>
+        <!-- Action Box -->
+        <div class="bg-blue-600/5 border border-blue-500/20 p-6 rounded-3xl text-center">
+            <label class="flex items-center justify-center gap-3 mb-6 cursor-pointer">
+                <input type="checkbox" id="checkAgree" class="custom-checkbox" onchange="toggleBtn()">
+                <span class="text-sm text-slate-300">Saya mengerti dan siap menonton</span>
+            </label>
 
-    <!-- Guide Modal -->
-    <div id="guide-modal" class="fixed inset-0 bg-black/90 hidden z-[2000] flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-zinc-900 w-full max-w-md p-8 rounded-3xl relative border border-white/10 shadow-2xl">
-            <button onclick="closeGuide()" class="absolute top-5 right-5 text-3xl text-gray-500 hover:text-white">&times;</button>
-            <div class="text-center mb-8">
-                <div class="bg-yellow-500/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-lightbulb text-3xl text-yellow-500"></i>
-                </div>
-                <h2 class="text-2xl font-bold">Panduan Menonton</h2>
-            </div>
-            <ul class="space-y-5 text-gray-300">
-                <li class="flex gap-4">
-                    <div class="bg-white/10 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shrink-0">1</div>
-                    <p class="text-sm leading-relaxed">Gunakan tombol <b>Garis Tiga</b> di pojok kiri atas untuk melihat jadwal dan layanan show.</p>
-                </li>
-                <li class="flex gap-4">
-                    <div class="bg-white/10 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shrink-0">2</div>
-                    <p class="text-sm leading-relaxed">Klik tab <b>Facebook/YouTube</b> untuk berpindah sumber player secara instan.</p>
-                </li>
-                <li class="flex gap-4">
-                    <div class="bg-white/10 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shrink-0">3</div>
-                    <p class="text-sm leading-relaxed">Miringkan ponsel (Auto-rotate) untuk menikmati tampilan video <b>Fullscreen</b> tanpa terpotong.</p>
-                </li>
-            </ul>
-            <button onclick="closeGuide()" class="w-full mt-10 bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-red-600/20">Mulai Menonton</button>
+            <a href="https://48realtime.github.io/RealLive/" id="watchBtn" class="disabled btn-primary inline-flex items-center justify-center w-full py-4 rounded-2xl text-white font-bold text-lg">
+                Mulai Menonton
+                <i class="fas fa-play-circle ml-2 text-xl"></i>
+            </a>
         </div>
+
+        <footer class="mt-8 text-center text-slate-600 text-[10px] uppercase tracking-widest">
+            RealTime Streaming &bull; Experience Better
+        </footer>
     </div>
 
-    <!-- Facebook SDK -->
-    <div id="fb-root"></div>
-    <script async defer crossorigin="anonymous" src="https://connect.facebook.net/id_ID/sdk.js#xfbml=1&version=v18.0"></script>
-
     <script>
-        /** * KONFIGURASI ADMIN **/
-        const CONFIG = {
-            ytPlayerId: "SszG-y3LcE0", 
-            ytChatId: "XaAYK_UjlVs",
-            fbVideoUrl: "https://www.facebook.com/ariesnama.asliku/videos/1433719818151130/",
-            isEncoded: false
-        };
-
-        function getVal(val) {
-            return CONFIG.isEncoded ? atob(val) : val;
-        }
-
-        const ytId = getVal(CONFIG.ytPlayerId);
-        const chatId = getVal(CONFIG.ytChatId);
-        const fbUrl = CONFIG.fbVideoUrl;
-
-        window.onload = () => {
-            loadYoutube();
-            loadChat();
-            loadFacebook();
-            if(!localStorage.getItem('guideShown')) showGuide();
-        };
-
-        function loadYoutube() {
-            const container = document.getElementById('yt-iframe-container');
-            const loader = document.getElementById('loader-yt');
-            const iframe = document.createElement('iframe');
-            iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=0&controls=0&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1`;
-            iframe.frameBorder = "0";
-            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-            iframe.allowFullscreen = true;
-            iframe.onload = () => {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 600);
-                document.getElementById('video-title').innerText = "Streaming YouTube Aktif";
-            };
-            container.appendChild(iframe);
-        }
-
-        function loadFacebook() {
-            const container = document.getElementById('fb-iframe-container');
-            const loader = document.getElementById('loader-fb');
-            container.innerHTML = `<div class="fb-video" data-href="${fbUrl}" data-width="auto" data-autoplay="false" data-show-captions="true" data-allowfullscreen="true"></div>`;
-            if(window.FB) FB.XFBML.parse(container);
-            setTimeout(() => {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 600);
-            }, 3000);
-        }
-
-        function loadChat() {
-            const container = document.getElementById('chat-iframe-container');
-            const loader = document.getElementById('loader-chat');
-            const iframe = document.createElement('iframe');
-            const currentDomain = window.location.hostname;
-            iframe.src = `https://www.youtube.com/live_chat?v=${chatId}&embed_domain=${currentDomain}`;
-            iframe.className = "w-full h-full";
-            iframe.frameBorder = "0";
-            iframe.onload = () => {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.style.display = 'none', 600);
-            };
-            container.appendChild(iframe);
-        }
-
-        function switchPlayer(type) {
-            const yt = document.getElementById('player-yt');
-            const fb = document.getElementById('player-fb');
-            const btnYt = document.getElementById('btn-yt');
-            const btnFb = document.getElementById('btn-fb');
-
-            if (type === 'youtube') {
-                yt.classList.remove('hidden');
-                fb.classList.add('hidden');
-                btnYt.classList.add('active');
-                btnFb.classList.remove('active');
-                document.getElementById('video-title').innerText = "Streaming YouTube Aktif";
+        function toggleBtn() {
+            const isChecked = document.getElementById('checkAgree').checked;
+            const btn = document.getElementById('watchBtn');
+            if(isChecked) {
+                btn.classList.remove('disabled');
             } else {
-                fb.classList.remove('hidden');
-                yt.classList.add('hidden');
-                btnFb.classList.add('active');
-                btnYt.classList.remove('active');
-                document.getElementById('video-title').innerText = "Streaming Facebook Aktif";
-                const ytIframe = document.querySelector('#yt-iframe-container iframe');
-                if(ytIframe) {
-                    const src = ytIframe.src;
-                    ytIframe.src = '';
-                    setTimeout(() => ytIframe.src = src, 100);
-                }
+                btn.classList.add('disabled');
             }
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            const isClosed = sidebar.classList.contains('closed');
-            
-            if(isClosed) {
-                overlay.classList.remove('hidden');
-                setTimeout(() => overlay.classList.add('opacity-100'), 10);
-                sidebar.classList.remove('closed');
-            } else {
-                overlay.classList.remove('opacity-100');
-                sidebar.classList.add('closed');
-                setTimeout(() => overlay.classList.add('hidden'), 300);
-            }
-        }
-
-        function showGuide() {
-            document.getElementById('guide-modal').classList.remove('hidden');
-        }
-
-        function closeGuide() {
-            document.getElementById('guide-modal').classList.add('hidden');
-            localStorage.setItem('guideShown', 'true');
         }
     </script>
 </body>
